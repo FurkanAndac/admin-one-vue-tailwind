@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useMainStore } from '@/stores/main'
 import {
   mdiAccountMultiple,
@@ -7,7 +7,6 @@ import {
   mdiChartTimelineVariant,
   mdiMonitorCellphone,
   mdiReload,
-  mdiGithub,
   mdiChartPie
 } from '@mdi/js'
 import * as chartConfig from '@/components/Charts/chart.config.js'
@@ -23,37 +22,50 @@ import CardBoxClient from '@/components/CardBoxClient.vue'
 import LayoutAuthenticated from '@/layouts/LayoutAuthenticated.vue'
 import SectionTitleLineWithButton from '@/components/SectionTitleLineWithButton.vue'
 import SectionBannerStarOnGitHub from '@/components/SectionBannerStarOnGitHub.vue'
+import { useUserStore } from '@/stores/userStore';
+// import Status from '@/views/StatusView.vue'
 
 const chartData = ref(null)
+const userStore = useUserStore();
 
 const fillChartData = () => {
   chartData.value = chartConfig.sampleChartData()
 }
 
-onMounted(() => {
-  fillChartData()
-})
+onMounted(async () => {
+  fillChartData();
+  await userStore.fetchUser();
+  console.log('User status after fetch:', userStore.userStatus); // Log the user status
+});
+
+const isCompany = computed(() => userStore.userStatus === 'Company');
+const isUser = computed(() => userStore.userStatus === 'Uxreviewer');
+const status = computed(() => userStore.userStatus);
+
 
 const mainStore = useMainStore()
 
 const clientBarItems = computed(() => mainStore.clients.slice(0, 4))
-
 const transactionBarItems = computed(() => mainStore.history)
+
+watch(() => userStore.userStatus, (newStatus) => {
+  console.log('User status changed:', newStatus);
+});
+
+watch(isCompany, (newValue) => {
+  console.log('isCompany changed:', newValue); // Log change in isCompany
+});
+
+watch(isUser, (newValue) => {
+  console.log('isUser changed:', newValue); // Log change in isUser
+});
 </script>
 
 <template>
   <LayoutAuthenticated>
     <SectionMain>
+      <template v-if="status==='Company'">
       <SectionTitleLineWithButton :icon="mdiChartTimelineVariant" title="Overview" main>
-        <BaseButton
-          href="https://github.com/justboil/admin-one-vue-tailwind"
-          target="_blank"
-          :icon="mdiGithub"
-          label="Star on GitHub"
-          color="contrast"
-          rounded-full
-          small
-        />
       </SectionTitleLineWithButton>
 
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
@@ -131,6 +143,14 @@ const transactionBarItems = computed(() => mainStore.history)
       <CardBox has-table>
         <TableSampleClients />
       </CardBox>
+    </template>
+    <template v-else-if="status==='UXReviewer'">
+        <!-- User specific UI -->
+        <h1>Hello User!</h1>
+        <p>Welcome to your personalized dashboard.</p>
+        <!-- Additional user-specific content -->
+      </template>
+
     </SectionMain>
   </LayoutAuthenticated>
 </template>

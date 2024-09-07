@@ -1,9 +1,9 @@
 <script setup>
-import { mdiForwardburger, mdiBackburger, mdiMenu } from '@mdi/js'
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import menuAside from '@/menuAside.js'
-import menuNavBar from '@/menuNavBar.js'
+import { useUserStore } from '@/stores/userStore'
+import { generateMenuConfig } from '@/menuNavBar.js' // Import the function to generate menu config
 import { useDarkModeStore } from '@/stores/darkMode.js'
 import BaseIcon from '@/components/BaseIcon.vue'
 import FormControl from '@/components/FormControl.vue'
@@ -11,31 +11,64 @@ import NavBar from '@/components/NavBar.vue'
 import NavBarItemPlain from '@/components/NavBarItemPlain.vue'
 import AsideMenu from '@/components/AsideMenu.vue'
 import FooterBar from '@/components/FooterBar.vue'
+import { signOut } from 'firebase/auth' // Make sure to import this from Firebase
+import { auth } from '../../firebaseConfig' // Adjust the import path according to your project structure
 
 const layoutAsidePadding = 'xl:pl-60'
 
 const darkModeStore = useDarkModeStore()
+const userStore = useUserStore()
 
 const router = useRouter()
 
 const isAsideMobileExpanded = ref(false)
 const isAsideLgActive = ref(false)
 
+// Reactive menu configuration
+const menuNavBar = ref([])
+
 router.beforeEach(() => {
   isAsideMobileExpanded.value = false
   isAsideLgActive.value = false
 })
 
-const menuClick = (event, item) => {
+const menuClick = async (event, item) => {
   if (item.isToggleLightDark) {
     darkModeStore.set()
   }
 
   if (item.isLogout) {
-    //
+    // Handle logout
+    try {
+      await signOut(auth)
+      userStore.user = null // Update user state
+      console.log('User logged out')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
   }
 }
+
+// Fetch user data and update menu configuration
+const updateMenuConfig = async () => {
+  await userStore.fetchUser() // Fetch user data
+  const status = userStore.user?.status
+  const credits = userStore.user?.credits || 0 // Default to 0 if credits are undefined
+
+  menuNavBar.value = generateMenuConfig(status, credits)
+
+  // Ensure DOM update after setting menuNavBar
+  await nextTick()
+
+  console.log("status:", status)
+  console.log("credits:", credits)
+}
+
+onMounted(() => {
+  updateMenuConfig()
+})
 </script>
+
 
 <template>
   <div

@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import Style from '@/views/StyleView.vue'
+import Style from '@/views/StatusView.vue'
 import Home from '@/views/HomeView.vue'
+import { useUserStore } from '@/stores/userStore';  // Import the user store
 
 const routes = [
   {
@@ -9,7 +10,19 @@ const routes = [
     },
     path: '/',
     name: 'style',
-    component: Style
+    component: Style,
+    // beforeEnter: async (to, from, next) => {
+    //   const userStore = useUserStore();
+    //   await userStore.fetchUser();  // Ensure the user data is loaded before navigation
+
+    //   if (userStore.userStatus) {
+    //     // If user already has a status, redirect to the dashboard
+    //     next({ name: 'dashboard' });
+    //   } else {
+    //     // If user has no status (null or empty), allow access to the style page
+    //     next();
+    //   }
+    // }
   },
   {
     // Document title tag
