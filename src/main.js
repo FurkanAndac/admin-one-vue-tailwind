@@ -4,9 +4,9 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useMainStore } from '@/stores/main.js'
-import { useUserStore } from '@/stores/userStore.js'
-import { auth } from '../firebaseConfig';
-import { onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
+// import { useUserStore } from '@/stores/userStore.js'
+// import { auth } from '../firebaseConfig';
+// import { onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import './css/main.css'
 
 // Init Pinia

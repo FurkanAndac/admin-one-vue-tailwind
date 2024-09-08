@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import Style from '@/views/StatusView.vue'
 import Home from '@/views/HomeView.vue'
-import { useUserStore } from '@/stores/userStore';  // Import the user store
+// import { useUserStore } from '@/stores/userStore';  // Import the user store
 
 const routes = [
   {
