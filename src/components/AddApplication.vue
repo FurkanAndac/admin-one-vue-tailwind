@@ -47,30 +47,48 @@ import FormControl from '@/components/FormControl.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseDivider from '@/components/BaseDivider.vue'
 import DropdownSelect from '@/components/DropdownSelect.vue'
+import { useUserStore } from '@/stores/userStore'
 
 const form = reactive({
   websiteUrl: '',
   credits: '1', // Default value for credits
   testAccount: '',
-  initialImpression: '',
-  easeOfAccess: '',
-  findingInformation: '',
-  visualAppeal: '',
-  easeOfUse: '',
 })
 
-const submit = () => {
-  console.log('Form data:', form)
+const submit = async () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL + '/api/jobs/add'
+  // userStore = useUserStore()
+
+  try {
+    const response = await fetch(backendUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        websiteUrl: form.websiteUrl,
+        credits: form.credits,
+        testAccount: form.testAccount,
+        email: useUserStore().user?.email,
+        companyUid: useUserStore().user.firebaseUid
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    console.log('Form submitted successfully:', result)
+  } catch (error) {
+    console.error('Form submission failed:', error)
+  }
 }
 
 const resetForm = () => {
   form.websiteUrl = ''
   form.credits = '1'
   form.testAccount = ''
-  form.initialImpression = ''
-  form.easeOfAccess = ''
-  form.findingInformation = ''
-  form.visualAppeal = ''
-  form.easeOfUse = ''
 }
 </script>
+

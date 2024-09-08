@@ -23,9 +23,11 @@ import LayoutAuthenticated from '@/layouts/LayoutAuthenticated.vue'
 import SectionTitleLineWithButton from '@/components/SectionTitleLineWithButton.vue'
 import SectionBannerStarOnGitHub from '@/components/SectionBannerStarOnGitHub.vue'
 import { useUserStore } from '@/stores/userStore';
+import { useJobStore } from '@/stores/jobStore'
 
 const chartData = ref(null)
 const userStore = useUserStore();
+const jobStore = useJobStore();
 const showIframe = ref(false); // Ref to control iframe visibility
 const timer = ref(30); // 5 minutes in seconds
 const timerRunning = ref(false); // Ref to control timer state
@@ -53,7 +55,9 @@ const startTimer = () => {
 onMounted(async () => {
   fillChartData();
   await userStore.fetchUser();
+  await jobStore.fetchJobByAlgorithm();
   console.log('User status after fetch:', userStore.userStatus); // Log the user status
+  console.log('fetched job according to algorithm:', jobStore.selectedJob)
 });
 
 const isCompany = computed(() => userStore.userStatus === 'Company');
@@ -175,33 +179,55 @@ const handleNext = () => {
 
       <template v-else-if="status === 'UXReviewer'">
         <!-- User specific UI -->
-        <h1>Hello User!</h1>
-        <p>Welcome to UXReviews.ai, welcome on board as a UXReviewer! P.S. The minimum amount of credits needed for payout is 50. Click the button below to get started!</p>
-        <!-- Additional user-specific content -->
-        <button
-          class='inline-flex justify-center items-center whitespace-nowrap focus:outline-none transition-colors focus:ring duration-150 border cursor-pointer rounded border-emerald-600 dark:border-emerald-500 ring-emerald-300 dark:ring-emerald-700 bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 hover:border-emerald-700 hover:dark:bg-emerald-600 hover:dark:border-emerald-600 py-2 px-3 mr-3 last:mr-0 mb-3'
-          @click="startReview"
-        >
-          START REVIEW!
-        </button>
-        <span v-if="timerRunning" class="timer-text">
-          {{ Math.floor(timer / 60) }}:{{ (timer % 60).toString().padStart(2, '0') }}
-        </span>
+        <h1 class="text-2xl font-bold">Hello UXReviewer!</h1>
+        <p class="mt-2">
+          Welcome to UXReviews.ai! The minimum amount of credits needed for payout is 50. Click the button below to get started!
+        </p>
+
+        <!-- Flexbox container to align card and button -->
+        <div class="flex mt-6 space-x-6">
+          <!-- Card with details -->
+          <div class="w-full max-w-xs bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Job details</h2>
+            <ul class="mt-2 text-gray-600 dark:text-gray-400">
+              <li>URL to visit: {{ jobStore.selectedJob?.websiteUrl }} </li>
+              <li>Credits: {{ jobStore.selectedJob?.credits }}</li>
+              <li>Test credentials: {{ jobStore.selectedJob?.testAccount }}</li>
+            </ul>
+          </div>
+
+          <!-- Start Review button with timer -->
+          <div class="flex flex-col items-center">
+            <button
+              class='inline-flex justify-center items-center whitespace-nowrap focus:outline-none transition-colors focus:ring duration-150 border cursor-pointer rounded border-emerald-600 dark:border-emerald-500 ring-emerald-300 dark:ring-emerald-700 bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 hover:border-emerald-700 hover:dark:bg-emerald-600 hover:dark:border-emerald-600 py-2 px-3 mb-3'
+              @click="startReview"
+            >
+              START REVIEW!
+            </button>
+            <!-- Timer -->
+            <span v-if="timerRunning" class="timer-text text-lg font-medium">
+              {{ Math.floor(timer / 60) }}:{{ (timer % 60).toString().padStart(2, '0') }}
+            </span>
+          </div>
+        </div>
+
         <!-- Conditionally load iframe -->
         <div v-if="showIframe" class="mt-4">
           <iframe
-            src="https://arbeidsbeperkt.eu"
+            :src="jobStore.selectedJob?.websiteUrl"
             width="100%"
             height="600"
             frameborder="0"
             allowfullscreen
           ></iframe>
         </div>
+
         <!-- Conditionally show next button -->
         <button v-if="nextButtonVisible" @click="handleNext" class="mt-4 inline-flex justify-center items-center whitespace-nowrap focus:outline-none transition-colors focus:ring duration-150 border cursor-pointer rounded border-blue-600 bg-blue-600 text-white hover:bg-blue-700 py-2 px-4">
           Next
         </button>
       </template>
+
     </SectionMain>
   </LayoutAuthenticated>
 </template>

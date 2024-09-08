@@ -1,6 +1,6 @@
 <script setup>
-import { reactive, ref } from 'vue'
-import { mdiBallotOutline, mdiAccount, mdiGithub } from '@mdi/js'
+import { ref } from 'vue'
+import { mdiBallotOutline, mdiGithub } from '@mdi/js'
 import SectionMain from '@/components/SectionMain.vue'
 import CardBox from '@/components/CardBox.vue'
 import FormField from '@/components/FormField.vue'
@@ -8,14 +8,13 @@ import FormControl from '@/components/FormControl.vue'
 import BaseDivider from '@/components/BaseDivider.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseButtons from '@/components/BaseButtons.vue'
-import SectionTitle from '@/components/SectionTitle.vue'
 import LayoutAuthenticated from '@/layouts/LayoutAuthenticated.vue'
 import SectionTitleLineWithButton from '@/components/SectionTitleLineWithButton.vue'
-import NotificationBarInCard from '@/components/NotificationBarInCard.vue'
 import { useUserStore } from '@/stores/userStore.js'
 import AddApplication from '@/components/AddApplication.vue'
+import { useJobStore } from '@/stores/jobStore'
 
-const form = reactive({
+const form = ref({
   initialImpression: '',
   easeOfAccess: '',
   findingInformation: '',
@@ -36,28 +35,51 @@ const form = reactive({
   visualMediaElements: ''
 })
 
-const submit = () => {
-  // Handle form submission
-}
+const submitFeedback = async () => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/questionnaire/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jobId: jobStore.selectedJob._id,
+        ...form.value,
+      }),
+    });
 
-const formStatusWithHeader = ref(true)
-const formStatusCurrent = ref(0)
-const formStatusOptions = ['info', 'success', 'danger', 'warning']
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Feedback submitted successfully:', result);
+      // Handle success (e.g., show a confirmation message)
+    } else {
+      console.error('Error submitting feedback:', response.statusText);
+      // Handle error (e.g., show an error message)
+    }
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    // Handle network error (e.g., show an error message)
+  }
+};
+// const formStatusWithHeader = ref(true)
+// const formStatusCurrent = ref(0)
+// const formStatusOptions = ['info', 'success', 'danger', 'warning']
 
-const formStatusSubmit = () => {
-  formStatusCurrent.value = formStatusOptions[formStatusCurrent.value + 1]
-    ? formStatusCurrent.value + 1
-    : 0
-}
+// const formStatusSubmit = () => {
+//   formStatusCurrent.value = formStatusOptions[formStatusCurrent.value + 1]
+//     ? formStatusCurrent.value + 1
+//     : 0
+// }
 
-const userStore = useUserStore()
+const userStore = useUserStore();
+const jobStore = useJobStore();
 </script>
 
 <template>
   <LayoutAuthenticated>
     <SectionMain>
       <div v-if="userStore.user?.status === 'UXReviewer' || userStore.user?.status === 'Company'">
-        <SectionTitleLineWithButton :icon="mdiBallotOutline" title="Feedback Form" main>
+        <SectionTitleLineWithButton :icon="mdiBallotOutline"   :title="userStore.user?.status === 'UXReviewer' ? 'Questionnaire Form' : 'Application Form'" main>
           <BaseButton
             href="https://github.com/justboil/admin-one-vue-tailwind"
             target="_blank"
@@ -70,116 +92,91 @@ const userStore = useUserStore()
         </SectionTitleLineWithButton>
 
         <CardBox form @submit.prevent="submit">
-          <AddApplication />
+          <AddApplication v-if="userStore.user?.status === 'Company'"/>
 
           <!-- Optional fields for UXReviewer -->
-          <template v-if="userStore.user?.status === 'UXReviewer'">
-            <FormField label="Ease of Access">
-              <FormControl v-model="form.easeOfAccess" type="textarea" placeholder="Was it easy to access and load the website on your first attempt?" />
-            </FormField>
+          <template v-if="userStore.user?.status === 'UXReviewer' && jobStore.selectedJob?._id !== null">
+            <form @submit.prevent="submitFeedback">
+              <FormField label="Ease of Access" required>
+                <FormControl v-model="form.easeOfAccess" type="textarea" placeholder="Was it easy to access and load the website on your first attempt?" required />
+              </FormField>
 
-            <FormField label="Finding Information">
-              <FormControl v-model="form.findingInformation" type="textarea" placeholder="How easy was it to find the information you were looking for?" />
-            </FormField>
+              <FormField label="Finding Information" required>
+                <FormControl v-model="form.findingInformation" type="textarea" placeholder="How easy was it to find the information you were looking for?" required />
+              </FormField>
 
-            <FormField label="Visual Appeal">
-              <FormControl v-model="form.visualAppeal" type="textarea" placeholder="How would you describe the visual appeal of the website?" />
-            </FormField>
+              <FormField label="Visual Appeal" required>
+                <FormControl v-model="form.visualAppeal" type="textarea" placeholder="How would you describe the visual appeal of the website?" required />
+              </FormField>
 
-            <FormField label="Understanding Content">
-              <FormControl v-model="form.understandingContent" type="textarea" placeholder="Was the content presented in a clear and understandable way?" />
-            </FormField>
+              <FormField label="Understanding Content" required>
+                <FormControl v-model="form.understandingContent" type="textarea" placeholder="Was the content presented in a clear and understandable way?" required />
+              </FormField>
 
-            <FormField label="Relevance">
-              <FormControl v-model="form.relevance" type="textarea" placeholder="Did the content seem relevant and useful to you?" />
-            </FormField>
+              <FormField label="Relevance" required>
+                <FormControl v-model="form.relevance" type="textarea" placeholder="Did the content seem relevant and useful to you?" required />
+              </FormField>
 
-            <FormField label="Feature Use">
-              <FormControl v-model="form.featureUse" type="textarea" placeholder="Did you find the features of the website to be functional and helpful?" />
-            </FormField>
+              <FormField label="Feature Use" required>
+                <FormControl v-model="form.featureUse" type="textarea" placeholder="Did you find the features of the website to be functional and helpful?" required />
+              </FormField>
 
-            <FormField label="Performance">
-              <FormControl v-model="form.performance" type="textarea" placeholder="How would you rate the performance of the website?" />
-            </FormField>
+              <FormField label="Performance" required>
+                <FormControl v-model="form.performance" type="textarea" placeholder="How would you rate the performance of the website?" required />
+              </FormField>
 
-            <FormField label="Ease of Use">
-              <FormControl v-model="form.easeOfUse" type="textarea" placeholder="How easy was it to use the website overall?" />
-            </FormField>
+              <FormField label="Ease of Use" required>
+                <FormControl v-model="form.easeOfUse" type="textarea" placeholder="How easy was it to use the website overall?" required />
+              </FormField>
 
-            <FormField label="First-Time Experience">
-              <FormControl v-model="form.firstTimeExperience" type="textarea" placeholder="Did you feel that the website was user-friendly and welcoming?" />
-            </FormField>
+              <FormField label="First-Time Experience" required>
+                <FormControl v-model="form.firstTimeExperience" type="textarea" placeholder="Did you feel that the website was user-friendly and welcoming?" required />
+              </FormField>
 
-            <FormField label="Design Appeal">
-              <FormControl v-model="form.designAppeal" type="textarea" placeholder="How did you feel about the design of the website?" />
-            </FormField>
+              <FormField label="Design Appeal" required>
+                <FormControl v-model="form.designAppeal" type="textarea" placeholder="How did you feel about the design of the website?" required />
+              </FormField>
 
-            <FormField label="Engagement">
-              <FormControl v-model="form.engagement" type="textarea" placeholder="Did the website engage you visually or interactively?" />
-            </FormField>
+              <FormField label="Engagement" required>
+                <FormControl v-model="form.engagement" type="textarea" placeholder="Did the website engage you visually or interactively?" required />
+              </FormField>
 
-            <FormField label="Finding Help">
-              <FormControl v-model="form.findingHelp" type="textarea" placeholder="Was it easy to find help or support resources on the website?" />
-            </FormField>
+              <FormField label="Finding Help" required>
+                <FormControl v-model="form.findingHelp" type="textarea" placeholder="Was it easy to find help or support resources on the website?" required />
+              </FormField>
 
-            <FormField label="Onboarding">
-              <FormControl v-model="form.onboarding" type="textarea" placeholder="Did the website provide any onboarding or introductory content?" />
-            </FormField>
+              <FormField label="Onboarding" required>
+                <FormControl v-model="form.onboarding" type="textarea" placeholder="Did the website provide any onboarding or introductory content?" required />
+              </FormField>
 
-            <FormField label="Satisfaction">
-              <FormControl v-model="form.satisfaction" type="textarea" placeholder="Overall, how satisfied are you with your first-time experience on the website?" />
-            </FormField>
+              <FormField label="Satisfaction" required>
+                <FormControl v-model="form.satisfaction" type="textarea" placeholder="Overall, how satisfied are you with your first-time experience on the website?" required />
+              </FormField>
 
-            <FormField label="Improvement">
-              <FormControl v-model="form.improvement" type="textarea" placeholder="What improvements or changes would you suggest?" />
-            </FormField>
+              <FormField label="Improvement" required>
+                <FormControl v-model="form.improvement" type="textarea" placeholder="What improvements or changes would you suggest?" required />
+              </FormField>
 
-            <FormField label="Specific Features">
-              <FormControl v-model="form.specificFeatures" type="textarea" placeholder="Did you interact with any specific features for the first time?" />
-            </FormField>
+              <FormField label="Specific Features" required>
+                <FormControl v-model="form.specificFeatures" type="textarea" placeholder="Did you interact with any specific features for the first time?" required />
+              </FormField>
 
-            <FormField label="Visual and Media Elements">
-              <FormControl v-model="form.visualMediaElements" type="textarea" placeholder="How did the visual and media elements contribute to your experience?" />
-            </FormField>
+              <FormField label="Visual and Media Elements" required>
+                <FormControl v-model="form.visualMediaElements" type="textarea" placeholder="How did the visual and media elements contribute to your experience?" required />
+              </FormField>
+
+              <BaseButton type="submit" color="primary" label="Submit Feedback" />
+            </form>
           </template>
+
 
           <BaseDivider />
 
-          <template #footer>
+          <template v-if="userStore.user?.status === 'UXReviewer'" #footer >
             <BaseButtons>
               <BaseButton type="submit" color="info" label="Submit" />
-              <BaseButton type="reset" color="info" outline label="Reset" />
+              <!-- <BaseButton type="reset" color="info" outline label="Reset" /> -->
             </BaseButtons>
-          </template>
-        </CardBox>
-
-        <SectionTitle>Form with status example</SectionTitle>
-
-        <CardBox
-          class="md:w-7/12 lg:w-5/12 xl:w-4/12 shadow-2xl md:mx-auto"
-          is-form
-          is-hoverable
-          @submit.prevent="formStatusSubmit"
-        >
-          <NotificationBarInCard
-            :color="formStatusOptions[formStatusCurrent]"
-            :is-placed-with-header="formStatusWithHeader"
-          >
-            <span>
-              <b class="capitalize">{{ formStatusOptions[formStatusCurrent] }}</b> state
-            </span>
-          </NotificationBarInCard>
-          <FormField label="Fields">
-            <FormControl
-              v-model="form.name"
-              :icon-left="mdiAccount"
-              help="Your full name"
-              placeholder="Name"
-            />
-          </FormField>
-
-          <template #footer>
-            <BaseButton label="Trigger" type="submit" color="info" />
           </template>
         </CardBox>
       </div>
