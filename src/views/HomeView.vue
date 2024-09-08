@@ -92,11 +92,6 @@ const handleNext = () => {
 <template>
   <LayoutAuthenticated>
     <SectionMain>
-      <div v-if="timerRunning" class="absolute top-0 right-0 m-4 bg-white p-2 rounded shadow-md timer-visual">
-        <span class="timer-text">
-          {{ Math.floor(timer / 60) }}:{{ (timer % 60).toString().padStart(2, '0') }}
-        </span>
-      </div>
 
       <template v-if="status === 'Company'">
         <SectionTitleLineWithButton :icon="mdiChartTimelineVariant" title="Overview" main />

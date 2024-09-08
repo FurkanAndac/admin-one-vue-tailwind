@@ -1,6 +1,6 @@
 <script setup>
-import { reactive } from 'vue'
-import { useMainStore } from '@/stores/main'
+import { reactive, onMounted } from 'vue'
+import { useUserStore } from '@/stores/userStore' // Import the user store
 import { mdiAccount, mdiMail, mdiAsterisk, mdiFormTextboxPassword, mdiGithub } from '@mdi/js'
 import SectionMain from '@/components/SectionMain.vue'
 import CardBox from '@/components/CardBox.vue'
@@ -14,25 +14,41 @@ import UserCard from '@/components/UserCard.vue'
 import LayoutAuthenticated from '@/layouts/LayoutAuthenticated.vue'
 import SectionTitleLineWithButton from '@/components/SectionTitleLineWithButton.vue'
 
-const mainStore = useMainStore()
+// Use the user store to get user information from Firebase
+const userStore = useUserStore()
 
+// Create a reactive form object pre-filled with the user's name and email
 const profileForm = reactive({
-  name: mainStore.userName,
-  email: mainStore.userEmail
+  name: '',
+  email: ''
 })
 
+// Password form for updating the user's password
 const passwordForm = reactive({
   password_current: '',
   password: '',
   password_confirmation: ''
 })
 
+// Fetch user information and populate the form fields
+onMounted(() => {
+  userStore.fetchUser().then(() => {
+    profileForm.name = userStore.user?.displayName || ''
+    profileForm.email = userStore.user?.email || ''
+  })
+})
+
+// Submit handler for updating profile information
 const submitProfile = () => {
-  mainStore.setUser(profileForm)
+  // Assuming `setUser` in main store is just for local state management
+  userStore.user.displayName = profileForm.name
+  userStore.user.email = profileForm.email
+  // You might also want to send this updated data to your backend or Firebase here
 }
 
+// Submit handler for password change (optional, you need to add logic here)
 const submitPass = () => {
-  //
+  // Implement the logic to update the password using Firebase Auth
 }
 </script>
 
