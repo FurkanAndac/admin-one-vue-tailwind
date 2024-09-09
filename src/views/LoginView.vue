@@ -1,53 +1,11 @@
 <template>
-  <LayoutGuest>
-    <SectionFullScreen v-slot="{ cardClass }" bg="purplePink">
-      <CardBox :class="cardClass" is-form @submit.prevent="submit">
-        <FormField label="Login" help="Please enter your login">
-          <FormControl
-            v-model="form.login"
-            :icon="mdiAccount"
-            name="login"
-            autocomplete="username"
-          />
-        </FormField>
-
-        <FormField label="Password" help="Please enter your password">
-          <FormControl
-            v-model="form.pass"
-            :icon="mdiAsterisk"
-            type="password"
-            name="password"
-            autocomplete="current-password"
-          />
-        </FormField>
-
-        <FormCheckRadio
-          v-model="form.remember"
-          name="remember"
-          label="Remember"
-          :input-value="true"
-        />
-
-
-
-        <template #footer>
-          <BaseButtons>
-            <BaseButton type="submit" color="info" label="Login" />
-            <BaseButton to="/dashboard" color="info" outline label="Back" />
-          </BaseButtons>
-        </template>
-      </CardBox>
-      <button
-          class="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-          @click="handleLogin"
-        >
-          Login with Google
-        </button>
-    </SectionFullScreen>
-  </LayoutGuest>
+  <main>
+    <Login />
+  </main>
 </template>
 
 <script setup>
+import Login from '../components/Login.vue'
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { mdiAccount, mdiAsterisk } from '@mdi/js'

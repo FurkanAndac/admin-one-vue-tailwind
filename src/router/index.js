@@ -84,12 +84,29 @@ const routes = [
   },
   {
     meta: {
+      title: 'Signup'
+    },
+    path: '/signup',
+    name: 'signup',
+    component: () => import('@/views/SignUpView.vue')
+  },
+  {
+    meta: {
+      title: 'Forgot password'
+    },
+    path: '/forgot-password',
+    name: 'forgotPassword',
+    component: () => import('@/views/ForgotPasswordView.vue')
+  },
+  {
+    meta: {
       title: 'Error'
     },
     path: '/error',
     name: 'error',
     component: () => import('@/views/ErrorView.vue')
-  }
+  },
+
 ]
 
 const router = createRouter({
