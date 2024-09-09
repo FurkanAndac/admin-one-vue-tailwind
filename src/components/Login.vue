@@ -127,6 +127,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../../firebaseConfig"; // Adjust the path as needed
 import { useRouter } from "vue-router";
+import axios from "axios";
 import AnimatedBackground from "./AnimatedBackground.vue";
 import GoogleSignInButton from "./GoogleSignInButton.vue";
 
@@ -145,16 +146,45 @@ export default {
 
     const signIn = async () => {
       try {
+        // Set the persistence type based on the "Remember me" checkbox
         await setPersistence(
           auth,
           rememberMe.value ? browserLocalPersistence : browserSessionPersistence
         );
-        await signInWithEmailAndPassword(auth, email.value, password.value);
+
+        // Sign in the user with email and password
+        const result = await signInWithEmailAndPassword(auth, email.value, password.value);
+        const userData = result.user;
+
+        console.log('User logged in:', userData);
+
+        // Use the upsert to either add or update the user in the backend
+        // await upsertUserToBackend(userData);
+
+        // Redirect to homepage after login
         router.push("/");
       } catch (error) {
         console.error("Error signing in:", error);
         errorMessage.value =
           "Login failed. Please check your email and password and try again.";
+      }
+    };
+
+    // Helper function to upsert user to the backend
+    const upsertUserToBackend = async (userData) => {
+      try {
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/add`, {
+          firebaseUid: userData.uid,
+          name: userData.displayName || '', // Handle null or undefined displayName
+          email: userData.email,
+          metadata: {
+            creationTime: userData.metadata.creationTime,
+            lastSignInTime: userData.metadata.lastSignInTime,
+          }
+        });
+        console.log('User upserted to backend:', response.data);
+      } catch (backendError) {
+        console.error('Failed to upsert user to backend:', backendError);
       }
     };
 

@@ -31,12 +31,24 @@ export const useJobStore = defineStore('job', () => {
   /**
    * Fetch a job according to a specific algorithm
    */
-  const fetchJobByAlgorithm = async () => {
+  const fetchJobByAlgorithm = async (user) => {
     try {
-      const response = await axios.get(`${backendUrl}/api/jobs/pick`);
+      // Include the user ID in the headers
+      const response = await axios.get(`${backendUrl}/api/jobs/pick`, {
+        params: {
+          user: user // Send user ID as a query parameter
+        }
+      });
+
       if (response.status === 200) {
-        selectedJob.value = response.data;
-        console.log('Fetched job using algorithm:', selectedJob.value);
+        const job = response.data;
+        if (job.message) {
+          console.warn(job.message); // Log or display a message to the user
+          selectedJob.value = null; // Set selectedJob to null if no job is available
+        } else {
+          selectedJob.value = job; // Update selectedJob with the fetched job
+          console.log('Fetched job using algorithm:', selectedJob.value);
+        }
       } else {
         console.error('Failed to fetch job by algorithm:', response.status);
         error.value = 'Failed to fetch job by algorithm';

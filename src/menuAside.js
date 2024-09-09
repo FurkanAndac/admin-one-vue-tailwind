@@ -19,45 +19,11 @@ export function generateMenuAside(userStatus) {
       label: 'Dashboard'
     },
     {
-      to: '/tables',
-      label: 'Tables',
-      icon: mdiTable
-    },
-    {
       // to: userStatus === 'UXReviewer' ? '/questionnaire' : (userStatus === 'Company' ? '/add-application' : '/forms'),
       to: '/forms',
       label: userStatus === 'UXReviewer' ? 'Questionnaire' : (userStatus === 'Company' ? 'Add Application' : 'Forms'),
       icon: mdiSquareEditOutline
     },
-    {
-      to: '/ui',
-      label: 'UI',
-      icon: mdiTelevisionGuide
-    },
-    {
-      to: '/responsive',
-      label: 'Responsive',
-      icon: mdiResponsive
-    },
-    {
-      to: '/',
-      label: 'Styles',
-      icon: mdiPalette
-    },
-    {
-      to: '/profile',
-      label: 'Profile',
-      icon: mdiAccountCircle
-    },
-    {
-      to: '/login',
-      label: 'Login',
-      icon: mdiLock
-    },
-    {
-      to: '/error',
-      label: 'Error',
-      icon: mdiAlertCircle
-    }
+
   ];
 }

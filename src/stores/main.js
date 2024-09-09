@@ -6,6 +6,8 @@ export const useMainStore = defineStore('main', () => {
   const userName = ref('John Doe')
   const userEmail = ref('doe.doe.doe@example.com')
 
+  const inExcercise = ref(false)
+
   const userAvatar = computed(
     () =>
       `https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail.value.replace(
@@ -13,6 +15,10 @@ export const useMainStore = defineStore('main', () => {
         '-'
       )}`
   )
+
+  function setInExcercise(value) {
+    inExcercise.value = value
+  }
 
   const isFieldFocusRegistered = ref(false)
 
@@ -59,6 +65,8 @@ export const useMainStore = defineStore('main', () => {
     history,
     setUser,
     fetchSampleClients,
-    fetchSampleHistory
+    fetchSampleHistory,
+    setInExcercise,
+    inExcercise
   }
 })

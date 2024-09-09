@@ -43,27 +43,61 @@
 </template>
 
 <script>
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, setPersistence, browserSessionPersistence } from "firebase/auth";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
 import { auth } from "../../firebaseConfig"; // Adjust the path as needed
+import axios from "axios";
 
 export default {
   setup() {
     const errorMessage = ref("");
     const router = useRouter();
 
+
     const signInWithGoogle = async () => {
-      const provider = new GoogleAuthProvider();
+      const googleProvider = new GoogleAuthProvider();
+
       try {
-        await signInWithPopup(auth, provider);
-        router.push("/");
+        // Set session persistence for login
+        await setPersistence(auth, browserSessionPersistence);
+
+        // Sign in with Google popup
+        const result = await signInWithPopup(auth, googleProvider);
+        const userData = result.user;
+
+        console.log('User logged in:', userData);
+
+        // Use the upsert to either add or update user in the backend
+        await upsertUserToBackend(userData);
+
+        // Redirect to homepage after login
+        router.push('/');
+
       } catch (error) {
-        console.error("Error signing in with Google:", error);
-        errorMessage.value =
-          "Google login failed. Please try again.";
+        console.error('Google login failed:', error);
+        errorMessage.value = "Google login failed. Please try again.";
       }
     };
+
+    // Helper function to upsert user in backend
+    const upsertUserToBackend = async (userData) => {
+      try {
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/add`, {
+          firebaseUid: userData.uid,
+          name: userData.displayName,
+          email: userData.email,
+          metadata: {
+            creationTime: userData.metadata.creationTime,
+            lastSignInTime: userData.metadata.lastSignInTime,
+          }
+        });
+        console.log('User upserted to backend:', response.data);
+      } catch (backendError) {
+        console.error('Failed to upsert user to backend:', backendError);
+      }
+    };
+
 
     return {
       signInWithGoogle,

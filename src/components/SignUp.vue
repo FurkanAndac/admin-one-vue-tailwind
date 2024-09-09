@@ -15,11 +15,11 @@
         <p class="mt-2 text-center text-sm text-gray-600 max-w">
           Or
           <a
-          @click.prevent="goToLogin"
-          class="font-medium text-blue-600 hover:text-blue-500"
-          role="button"
-          tabindex="0"
-          >login</a
+            @click.prevent="goToLogin"
+            class="font-medium text-blue-600 hover:text-blue-500"
+            role="button"
+            tabindex="0"
+            >login</a
           >
         </p>
       </div>
@@ -114,6 +114,7 @@ import { ref } from "vue";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebaseConfig"; // Adjust the path as needed
 import { useRouter } from "vue-router";
+import axios from "axios";
 import AnimatedBackground from "./AnimatedBackground.vue";
 
 export default {
@@ -125,25 +126,51 @@ export default {
     const email = ref("");
     const password = ref("");
     const repeatpassword = ref("");
-
     const errorMessage = ref("");
     const router = useRouter();
 
     const signUp = async () => {
       try {
         if (password.value === repeatpassword.value) {
-          await createUserWithEmailAndPassword(
+          // Create the user in Firebase
+          const result = await createUserWithEmailAndPassword(
             auth,
             email.value,
             password.value
           );
-          router.push("/login"); // Redirect to the home page on success
+          const userData = result.user;
+
+          console.log("User registered:", userData);
+
+          // Call backend to upsert user
+          await upsertUserToBackend(userData);
+
+          // Redirect to login page on success
+          router.push("/login");
         } else {
           errorMessage.value = "Password and repeat password do not match.";
         }
       } catch (error) {
         console.error("Error signing up:", error);
-        errorMessage.value = "Registration failed. Please check your login details again.";
+        errorMessage.value = "Registration failed. Please check your details.";
+      }
+    };
+
+    // Helper function to upsert user to the backend
+    const upsertUserToBackend = async (userData) => {
+      try {
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/add`, {
+          firebaseUid: userData.uid,
+          name: userData.displayName || '', // Handle null or undefined displayName
+          email: userData.email,
+          metadata: {
+            creationTime: userData.metadata.creationTime,
+            lastSignInTime: userData.metadata.lastSignInTime,
+          }
+        });
+        console.log("User upserted to backend:", response.data);
+      } catch (backendError) {
+        console.error("Failed to upsert user to backend:", backendError);
       }
     };
 

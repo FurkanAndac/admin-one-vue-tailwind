@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { mdiBallotOutline, mdiGithub } from '@mdi/js'
+import { mdiBallotOutline, mdiWeb } from '@mdi/js'
 import SectionMain from '@/components/SectionMain.vue'
 import CardBox from '@/components/CardBox.vue'
 import FormField from '@/components/FormField.vue'
@@ -13,6 +13,9 @@ import SectionTitleLineWithButton from '@/components/SectionTitleLineWithButton.
 import { useUserStore } from '@/stores/userStore.js'
 import AddApplication from '@/components/AddApplication.vue'
 import { useJobStore } from '@/stores/jobStore'
+import { useRouter } from 'vue-router'
+import { useMainStore } from '@/stores/main'
+import axios from 'axios'
 
 const form = ref({
   initialImpression: '',
@@ -34,6 +37,18 @@ const form = ref({
   specificFeatures: '',
   visualMediaElements: ''
 })
+const router = useRouter()
+const mainStore = useMainStore()
+
+const completeJob = async (jobId, userId) => {
+  try {
+    console.log('Completing job with ID:', jobId); // Log jobId
+    console.log('Completing job with userID:', userId); // Log jobId
+    await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/markAsCompleted`, { jobId, userId });
+  } catch (error) {
+    console.error('Error completing job:', error);
+  }
+};
 
 const submitFeedback = async () => {
   try {
@@ -51,6 +66,9 @@ const submitFeedback = async () => {
     if (response.ok) {
       const result = await response.json();
       console.log('Feedback submitted successfully:', result);
+      completeJob(jobStore.selectedJob?._id, userStore.user?._id);
+      mainStore.inExcercise = ref(false)
+      // router.push('/dashboard')
       // Handle success (e.g., show a confirmation message)
     } else {
       console.error('Error submitting feedback:', response.statusText);
@@ -60,36 +78,49 @@ const submitFeedback = async () => {
     console.error('Error submitting feedback:', error);
     // Handle network error (e.g., show an error message)
   }
-};
-// const formStatusWithHeader = ref(true)
-// const formStatusCurrent = ref(0)
-// const formStatusOptions = ['info', 'success', 'danger', 'warning']
-
-// const formStatusSubmit = () => {
-//   formStatusCurrent.value = formStatusOptions[formStatusCurrent.value + 1]
-//     ? formStatusCurrent.value + 1
-//     : 0
-// }
+}
 
 const userStore = useUserStore();
 const jobStore = useJobStore();
+
+const showIframe = ref(false);
+
+const toggleIframe = () => {
+  showIframe.value = !showIframe.value;
+}
 </script>
 
+
 <template>
-  <LayoutAuthenticated>
+  <LayoutAuthenticated >
     <SectionMain>
       <div v-if="userStore.user?.status === 'UXReviewer' || userStore.user?.status === 'Company'">
-        <SectionTitleLineWithButton :icon="mdiBallotOutline"   :title="userStore.user?.status === 'UXReviewer' ? 'Questionnaire Form' : 'Application Form'" main>
-          <BaseButton
-            href="https://github.com/justboil/admin-one-vue-tailwind"
-            target="_blank"
-            :icon="mdiGithub"
-            label="Star on GitHub"
-            color="contrast"
-            rounded-full
-            small
-          />
-        </SectionTitleLineWithButton>
+        <SectionTitleLineWithButton
+    :icon="mdiBallotOutline"
+    :title="userStore.user?.status === 'UXReviewer' ? 'Questionnaire Form' : 'Application Form'"
+    main
+  >
+    <!-- Toggle Button -->
+    <BaseButton
+      @click="toggleIframe"
+      :icon="mdiWeb"
+      label="Show iFrame"
+      color="primary"
+      rounded-full
+      small
+    />
+
+    <!-- Conditional iFrame Display -->
+    <div v-if="showIframe" class="mt-4">
+      <iframe
+        :src="jobStore.selectedJob?.websiteUrl"
+        width="100%"
+        height="600px"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </SectionTitleLineWithButton>
 
         <CardBox form @submit.prevent="submit">
           <AddApplication v-if="userStore.user?.status === 'Company'"/>
@@ -170,14 +201,13 @@ const jobStore = useJobStore();
           </template>
 
 
-          <BaseDivider />
+          <!-- <BaseDivider />
 
           <template v-if="userStore.user?.status === 'UXReviewer'" #footer >
             <BaseButtons>
-              <BaseButton type="submit" color="info" label="Submit" />
-              <!-- <BaseButton type="reset" color="info" outline label="Reset" /> -->
+              <BaseButton type="submit" color="info" label="Next!" />
             </BaseButtons>
-          </template>
+          </template> -->
         </CardBox>
       </div>
     </SectionMain>

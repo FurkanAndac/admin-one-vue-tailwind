@@ -16,11 +16,12 @@
         </NavBarItemPlain>
       </NavBar>
       <AsideMenu
-        :is-aside-mobile-expanded="isAsideMobileExpanded"
-        :is-aside-lg-active="isAsideLgActive"
-        :menu="menuAside"
-        @menu-click="menuClick"
-        @aside-lg-close-click="isAsideLgActive = false" />
+  v-if="!mainStore.inExcercise"
+  :is-aside-mobile-expanded="isAsideMobileExpanded"
+  :is-aside-lg-active="isAsideLgActive"
+  :menu="menuAside"
+  @menu-click="menuClick"
+  @aside-lg-close-click="isAsideLgActive = false" />
       <slot />
       <FooterBar>
         <!-- Add your footer content here -->
@@ -30,11 +31,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
 import { generateMenuAside } from '@/menuAside.js'
 import { useUserStore } from '@/stores/userStore'
-import { generateMenuConfig } from '@/menuNavBar.js' // Import the function to generate menu config
+import { generateMenuConfig } from '@/menuNavBar.js'
 import { useDarkModeStore } from '@/stores/darkMode.js'
 import BaseIcon from '@/components/BaseIcon.vue'
 import FormControl from '@/components/FormControl.vue'
@@ -44,6 +45,13 @@ import AsideMenu from '@/components/AsideMenu.vue'
 import FooterBar from '@/components/FooterBar.vue'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebaseConfig'
+import { useMainStore } from '@/stores/main'
+
+const props = defineProps({
+  asideMenuVisible: Boolean
+})
+
+const mainStore = useMainStore();
 
 const layoutAsidePadding = 'xl:pl-60'
 
@@ -58,7 +66,6 @@ const isAsideLgActive = ref(false)
 // Reactive menu configuration
 const menuAside = ref([])
 const menuNavBar = ref([])
-
 
 router.beforeEach(() => {
   isAsideMobileExpanded.value = false
@@ -80,6 +87,11 @@ const menuClick = async (event, item) => {
     }
   }
 }
+import { watch } from 'vue'
+
+watch(() => props.asideMenuVisible, (newValue) => {
+  console.log('AsideMenu visibility changed:', newValue)
+})
 
 const updateMenuConfig = async () => {
   await userStore.fetchUser()

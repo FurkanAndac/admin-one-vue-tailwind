@@ -24,6 +24,7 @@ import SectionTitleLineWithButton from '@/components/SectionTitleLineWithButton.
 import SectionBannerStarOnGitHub from '@/components/SectionBannerStarOnGitHub.vue'
 import { useUserStore } from '@/stores/userStore';
 import { useJobStore } from '@/stores/jobStore'
+import { useRouter } from 'vue-router'
 
 const chartData = ref(null)
 const userStore = useUserStore();
@@ -32,6 +33,7 @@ const showIframe = ref(false); // Ref to control iframe visibility
 const timer = ref(30); // 5 minutes in seconds
 const timerRunning = ref(false); // Ref to control timer state
 const nextButtonVisible = ref(false); // Ref to control next button visibility
+const router = useRouter()
 
 const fillChartData = () => {
   chartData.value = chartConfig.sampleChartData()
@@ -55,7 +57,9 @@ const startTimer = () => {
 onMounted(async () => {
   fillChartData();
   await userStore.fetchUser();
-  await jobStore.fetchJobByAlgorithm();
+  if (userStore.user?.status === "UXReviewer") {
+    await jobStore.fetchJobByAlgorithm(userStore.user);
+  }
   console.log('User status after fetch:', userStore.userStatus); // Log the user status
   console.log('fetched job according to algorithm:', jobStore.selectedJob)
 });
@@ -65,6 +69,7 @@ const isUser = computed(() => userStore.userStatus === 'Uxreviewer');
 const status = computed(() => userStore.userStatus);
 
 const mainStore = useMainStore()
+mainStore.inExcercise = ref(false)
 
 const clientBarItems = computed(() => mainStore.clients.slice(0, 4))
 const transactionBarItems = computed(() => mainStore.history)
@@ -82,12 +87,14 @@ watch(isUser, (newValue) => {
 });
 
 const startReview = () => {
+  mainStore.inExcercise = ref(true)
   showIframe.value = true; // Show the iframe when the button is clicked
   startTimer(); // Start the timer when the button is clicked
 }
 
 const handleNext = () => {
   // Handle the action for the "Next" button
+  router.push('/forms')
   console.log('Next button clicked');
 }
 </script>
