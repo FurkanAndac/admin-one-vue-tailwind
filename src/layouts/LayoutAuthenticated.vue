@@ -82,6 +82,7 @@ const menuClick = async (event, item) => {
       await signOut(auth)
       userStore.user = null
       console.log('User logged out')
+      router.push('/login')
     } catch (error) {
       console.error('Logout failed:', error)
     }

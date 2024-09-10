@@ -12,9 +12,14 @@ export const useJobStore = defineStore('job', () => {
   /**
    * Fetch all jobs from the backend
    */
-  const fetchJobs = async () => {
+  const fetchJobs = async (userId) => {
     try {
-      const response = await axios.get(`${backendUrl}/api/jobs`);
+      const response = await axios.get(`${backendUrl}/api/jobs`, {
+        params: {
+        _id: userId // Send user ID as a query parameter
+      }
+
+      });
       if (response.status === 200) {
         jobs.value = response.data;
         console.log('Fetched jobs from backend:', jobs.value);

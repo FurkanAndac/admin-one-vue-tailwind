@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, defineEmits } from 'vue'
 import { useMainStore } from '@/stores/main'
 import { mdiEye, mdiTrashCan } from '@mdi/js'
 import CardBoxModal from '@/components/CardBoxModal.vue'
@@ -8,127 +8,186 @@ import BaseLevel from '@/components/BaseLevel.vue'
 import BaseButtons from '@/components/BaseButtons.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { useJobStore } from '@/stores/jobStore'
+import { useUserStore } from '@/stores/userStore'
 
+// Define props
 defineProps({
-  checkable: Boolean
+  checkable: Boolean,
 })
 
+// Use the store to fetch user/client details
 const mainStore = useMainStore()
+const userStore = useUserStore()
+const jobStore = useJobStore()
 
-const items = computed(() => mainStore.clients)
+const jobsArray = ref([])
 
+// Computed property to access jobs from the store
+const items = ref([])
+
+const emit = defineEmits(['update-selected-jobs'])
+
+const jobs = computed(() => jobStore.jobs)
+
+const selectedJobs = ref(new Set())
+
+// Manage modal state
 const isModalActive = ref(false)
-
 const isModalDangerActive = ref(false)
 
+// Pagination settings
 const perPage = ref(5)
-
 const currentPage = ref(0)
 
+// Checked rows management
 const checkedRows = ref([])
 
+// Paginated items
 const itemsPaginated = computed(() =>
   items.value.slice(perPage.value * currentPage.value, perPage.value * (currentPage.value + 1))
 )
 
+// Number of pages for pagination
 const numPages = computed(() => Math.ceil(items.value.length / perPage.value))
 
+// Current page for display
 const currentPageHuman = computed(() => currentPage.value + 1)
 
+// Generate list of pages for pagination
 const pagesList = computed(() => {
   const pagesList = []
-
   for (let i = 0; i < numPages.value; i++) {
     pagesList.push(i)
   }
-
   return pagesList
 })
 
+// Remove an item from an array
 const remove = (arr, cb) => {
   const newArr = []
-
   arr.forEach((item) => {
     if (!cb(item)) {
       newArr.push(item)
     }
   })
-
   return newArr
 }
 
-const checked = (isChecked, client) => {
+// Handle checked state of rows
+const checked = (isChecked, job) => {
   if (isChecked) {
-    checkedRows.value.push(client)
+    // Add to checked rows if the checkbox is checked
+    checkedRows.value.push(job)
   } else {
-    checkedRows.value = remove(checkedRows.value, (row) => row.id === client.id)
+    // Remove from checked rows if unchecked
+    checkedRows.value = remove(checkedRows.value, (row) => row.id === job.id)
   }
+  emit('update-selected-jobs', Array.from(selectedJobs.value))
+  // Call a function to update chart or other UI based on checkedRows
+  updateChart()
 }
+
+const handleCheckboxChange = (event, jobId) => {
+  if (event.target.checked) {
+    console.log("checked jobId: " + jobId)
+    selectedJobs.value.add(jobId)
+  } else {
+    selectedJobs.value.delete(jobId)
+  }
+  emit('update-selected-jobs', Array.from(selectedJobs.value))
+}
+
+// Stub method for chart update
+const updateChart = () => {
+  console.log('Checked rows:', checkedRows.value)
+  // Logic to update the chart can be added here
+}
+
+const isChecked = (jobId) => selectedJobs.value.has(jobId)
+
+// Fetch jobs when the component is mounted
+onMounted(async () => {
+  const userId = userStore.user?._id
+  console.log("User ID:", userId)
+  await jobStore.fetchJobs(userId)
+  console.log('Fetched Jobs:', jobStore.jobs)
+  // Store the fetched jobs in the array
+  items.value = jobStore.jobs
+})
 </script>
+
+
 
 <template>
   <CardBoxModal v-model="isModalActive" title="Sample modal">
     <p>Lorem ipsum dolor sit amet <b>adipiscing elit</b></p>
-    <p>This is sample modal</p>
+    <p>This is a sample modal</p>
   </CardBoxModal>
 
   <CardBoxModal v-model="isModalDangerActive" title="Please confirm" button="danger" has-cancel>
     <p>Lorem ipsum dolor sit amet <b>adipiscing elit</b></p>
-    <p>This is sample modal</p>
+    <p>This is a sample modal</p>
   </CardBoxModal>
 
+  <!-- Job Table -->
   <table>
     <thead>
       <tr>
         <th v-if="checkable" />
         <th />
-        <th>Name</th>
-        <th>Company</th>
-        <th>City</th>
+        <th></th>
+        <th>Website</th>
+        <th>Credits</th>
+        <th>Test Account</th>
         <th>Progress</th>
-        <th>Created</th>
         <th />
       </tr>
     </thead>
     <tbody>
-      <tr v-for="client in itemsPaginated" :key="client.id">
-        <TableCheckboxCell v-if="checkable" @checked="checked($event, client)" />
-        <td class="border-b-0 lg:w-6 before:hidden">
-          <UserAvatar :username="client.name" class="w-24 h-24 mx-auto lg:w-6 lg:h-6" />
-        </td>
-        <td data-label="Name">
-          {{ client.name }}
-        </td>
-        <td data-label="Company">
-          {{ client.company }}
-        </td>
-        <td data-label="City">
-          {{ client.city }}
-        </td>
-        <td data-label="Progress" class="lg:w-32">
-          <progress class="flex w-2/5 self-center lg:w-full" max="100" :value="client.progress">
-            {{ client.progress }}
-          </progress>
-        </td>
-        <td data-label="Created" class="lg:w-1 whitespace-nowrap">
-          <small class="text-gray-500 dark:text-slate-400" :title="client.created">{{
-            client.created
-          }}</small>
-        </td>
-        <td class="before:hidden lg:w-1 whitespace-nowrap">
-          <BaseButtons type="justify-start lg:justify-end" no-wrap>
-            <BaseButton color="info" :icon="mdiEye" small @click="isModalActive = true" />
-            <BaseButton
-              color="danger"
-              :icon="mdiTrashCan"
-              small
-              @click="isModalDangerActive = true"
-            />
-          </BaseButtons>
-        </td>
-      </tr>
-    </tbody>
+  <tr v-for="job in jobs" :key="job._id">
+    <!-- Add a checkbox in front of every row -->
+    <td>
+      <input
+        type="checkbox"
+        :value="job._id"
+        @change="handleCheckboxChange($event, job._id)"
+        :checked="isChecked(job._id)"
+      />
+    </td>
+    <!-- Rest of your table rows -->
+    <td class="border-b-0 lg:w-6 before:hidden">
+      <UserAvatar :username="job._id" class="w-24 h-24 mx-auto lg:w-6 lg:h-6" />
+    </td>
+    <td data-label="Website">{{ job.websiteUrl }}</td>
+    <td data-label="Credits">{{ job.credits }}</td>
+    <td data-label="Test Account">{{ job.testAccount }}</td>
+    <td data-label="Progress" class="lg:w-32">
+      <!-- Progress Bar -->
+      <progress class="flex w-2/5 self-center lg:w-full" max="100" :value="job.completedBy.length">
+        {{ job.completedBy.length }}
+      </progress>
+      <!-- Textual Progress (x/100) -->
+      <div>{{ job.completedBy.length }}/100</div>
+    </td>
+    <td class="before:hidden lg:w-1 whitespace-nowrap">
+      <BaseButtons type="justify-start lg:justify-end" no-wrap>
+        <BaseButton color="info" :icon="mdiEye" small @click="isModalActive = true" />
+        <BaseButton
+          color="danger"
+          :icon="mdiTrashCan"
+          small
+          @click="isModalDangerActive = true"
+        />
+      </BaseButtons>
+    </td>
+  </tr>
+</tbody>
+
+
   </table>
+
+  <!-- Pagination -->
   <div class="p-3 lg:px-6 border-t border-gray-100 dark:border-slate-800">
     <BaseLevel>
       <BaseButtons>
@@ -146,3 +205,4 @@ const checked = (isChecked, client) => {
     </BaseLevel>
   </div>
 </template>
+

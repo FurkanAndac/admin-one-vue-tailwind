@@ -43,8 +43,16 @@ const mainStore = useMainStore()
 const completeJob = async (jobId, userId) => {
   try {
     console.log('Completing job with ID:', jobId); // Log jobId
-    console.log('Completing job with userID:', userId); // Log jobId
-    await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/markAsCompleted`, { jobId, userId });
+    console.log('Completing job with userID:', userId); // Log userId
+
+    const date = new Date().toISOString(); // Get current date in ISO format
+
+    await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/markAsCompleted`, {
+      jobId,
+      userId,
+      date // Send the current date to the backend
+    });
+
   } catch (error) {
     console.error('Error completing job:', error);
   }
@@ -68,7 +76,7 @@ const submitFeedback = async () => {
       console.log('Feedback submitted successfully:', result);
       completeJob(jobStore.selectedJob?._id, userStore.user?._id);
       mainStore.inExcercise = ref(false)
-      // router.push('/dashboard')
+      router.push('/dashboard')
       // Handle success (e.g., show a confirmation message)
     } else {
       console.error('Error submitting feedback:', response.statusText);

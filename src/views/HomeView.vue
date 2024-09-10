@@ -25,6 +25,7 @@ import SectionBannerStarOnGitHub from '@/components/SectionBannerStarOnGitHub.vu
 import { useUserStore } from '@/stores/userStore';
 import { useJobStore } from '@/stores/jobStore'
 import { useRouter } from 'vue-router'
+import BarChart from '@/components/Charts/BarChart.vue'
 
 const chartData = ref(null)
 const userStore = useUserStore();
@@ -34,6 +35,108 @@ const timer = ref(30); // 5 minutes in seconds
 const timerRunning = ref(false); // Ref to control timer state
 const nextButtonVisible = ref(false); // Ref to control next button visibility
 const router = useRouter()
+const selectedJobs = ref([])
+
+const updateSelectedJobs = (jobIds) => {
+  selectedJobs.value = jobIds
+  console.log("selectedJobs: ", selectedJobs.value)
+  updateBarChartData()
+}
+
+const updateBarChartData = () => {
+  // Filter jobs based on selected job IDs
+  const filteredJobs = jobStore.jobs.filter(job => selectedJobs.value.includes(job._id))
+  console.log("filteredJobs: ", filteredJobs)
+
+  // Prepare chart data
+  const chartData = {
+    labels: generateFullMonthDates(), // X-axis labels (dates)
+    datasets: [] // Datasets for each job
+  }
+
+  // Aggregate data
+  const completionCounts = aggregateCompletionData(filteredJobs)
+
+  // Populate chart data
+  filteredJobs.forEach(job => {
+    chartData.datasets.push({
+      label: "test", // Label for each job
+      data: generateDataForJob(job, completionCounts), // Data for each job
+      backgroundColor: generateRandomColor(), // Random color for each dataset
+      borderColor: generateRandomColorBorder(), // Random border color for each dataset
+      borderWidth: 1,
+      websiteUrl: job.websiteUrl // Store the website URL for tooltip usage
+    })
+  })
+
+  barChartData.value = chartData
+}
+
+// Utility function to aggregate job completion data by date
+const aggregateCompletionData = (jobs) => {
+  const completionCounts = {}
+
+  // Initialize completionCounts with all dates set to 0
+  generateFullMonthDates().forEach(date => {
+    jobs.forEach(job => {
+      if (!completionCounts[job._id]) {
+        completionCounts[job._id] = {}
+      }
+      completionCounts[job._id][date] = 0
+    })
+  })
+
+  // Iterate through each job and each completion
+  jobs.forEach((job) => {
+    job.completedBy.forEach((completion) => {
+      const completedAt = new Date(completion.completedAt).toLocaleDateString() // Format the completion date
+      if (completionCounts[job._id][completedAt] !== undefined) {
+        completionCounts[job._id][completedAt] += 1
+      }
+    })
+  })
+
+  return completionCounts
+}
+
+const generateDataForJob = (job, completionCounts) => {
+  return generateFullMonthDates().map(date => completionCounts[job._id][date] || 0)
+}
+
+const generateRandomColor = () => {
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  return `rgba(${r}, ${g}, ${b}, 0.6)`;
+}
+
+const generateRandomColorBorder = () => {
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  return `rgba(${r}, ${g}, ${b}, 1)`; // Full opacity for border
+}
+
+const generateFullMonthDates = () => {
+  const dates = [];
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  // Get the total number of days in the current month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    // Create a date string in the format of 'MM/DD/YYYY'
+    const date = new Date(year, month, day).toLocaleDateString();
+    dates.push(date);
+  }
+  return dates;
+};
+
+const barChartData = ref(null)
+
+const isBarChartVisible = computed(() => selectedJobs.value.length > 0)
 
 const fillChartData = () => {
   chartData.value = chartConfig.sampleChartData()
@@ -56,6 +159,7 @@ const startTimer = () => {
 
 onMounted(async () => {
   fillChartData();
+  updateBarChartData()
   await userStore.fetchUser();
   if (userStore.user?.status === "UXReviewer") {
     await jobStore.fetchJobByAlgorithm(userStore.user);
@@ -100,68 +204,14 @@ const handleNext = () => {
 </script>
 
 
+
+
 <template>
   <LayoutAuthenticated>
     <SectionMain>
 
       <template v-if="status === 'Company'">
         <SectionTitleLineWithButton :icon="mdiChartTimelineVariant" title="Overview" main />
-
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
-          <CardBoxWidget
-            trend="12%"
-            trend-type="up"
-            color="text-emerald-500"
-            :icon="mdiAccountMultiple"
-            :number="512"
-            label="Clients"
-          />
-          <CardBoxWidget
-            trend="12%"
-            trend-type="down"
-            color="text-blue-500"
-            :icon="mdiCartOutline"
-            :number="7770"
-            prefix="$"
-            label="Sales"
-          />
-          <CardBoxWidget
-            trend="Overflow"
-            trend-type="alert"
-            color="text-red-500"
-            :icon="mdiChartTimelineVariant"
-            :number="256"
-            suffix="%"
-            label="Performance"
-          />
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div class="flex flex-col justify-between">
-            <CardBoxTransaction
-              v-for="(transaction, index) in transactionBarItems"
-              :key="index"
-              :amount="transaction.amount"
-              :date="transaction.date"
-              :business="transaction.business"
-              :type="transaction.type"
-              :name="transaction.name"
-              :account="transaction.account"
-            />
-          </div>
-          <div class="flex flex-col justify-between">
-            <CardBoxClient
-              v-for="client in clientBarItems"
-              :key="client.id"
-              :name="client.name"
-              :login="client.login"
-              :date="client.created"
-              :progress="client.progress"
-            />
-          </div>
-        </div>
-
-        <SectionBannerStarOnGitHub class="mt-6 mb-6" />
 
         <SectionTitleLineWithButton :icon="mdiChartPie" title="Trends overview">
           <BaseButton :icon="mdiReload" color="whiteDark" @click="fillChartData" />
@@ -170,6 +220,9 @@ const handleNext = () => {
         <CardBox class="mb-6">
           <div v-if="chartData">
             <LineChart :data="chartData" class="h-96" />
+          </div>
+          <div>
+            <BarChart v-if="isBarChartVisible" :barChartData="barChartData" class="h-96" />
           </div>
         </CardBox>
 
@@ -180,7 +233,7 @@ const handleNext = () => {
         </NotificationBar>
 
         <CardBox has-table>
-          <TableSampleClients />
+          <TableSampleClients @update-selected-jobs="updateSelectedJobs"/>
         </CardBox>
       </template>
 
