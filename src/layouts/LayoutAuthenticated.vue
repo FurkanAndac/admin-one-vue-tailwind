@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, defineProps } from 'vue'
+import { ref, onMounted, nextTick, defineProps, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { generateMenuAside } from '@/menuAside.js'
 import { useUserStore } from '@/stores/userStore'
@@ -47,19 +47,21 @@ import { signOut } from 'firebase/auth'
 import { auth } from '../../firebaseConfig'
 import { useMainStore } from '@/stores/main'
 
+// Define props
 const props = defineProps({
   asideMenuVisible: Boolean
 })
 
-const mainStore = useMainStore();
-
+const mainStore = useMainStore()
 const layoutAsidePadding = 'xl:pl-60'
 
+// Stores
 const darkModeStore = useDarkModeStore()
 const userStore = useUserStore()
 
 const router = useRouter()
 
+// State Variables
 const isAsideMobileExpanded = ref(false)
 const isAsideLgActive = ref(false)
 
@@ -67,11 +69,13 @@ const isAsideLgActive = ref(false)
 const menuAside = ref([])
 const menuNavBar = ref([])
 
+// Reset aside menu states before navigating to a new route
 router.beforeEach(() => {
   isAsideMobileExpanded.value = false
   isAsideLgActive.value = false
 })
 
+// Menu click logic (toggle dark mode, logout, etc.)
 const menuClick = async (event, item) => {
   if (item.isToggleLightDark) {
     darkModeStore.set()
@@ -88,24 +92,30 @@ const menuClick = async (event, item) => {
     }
   }
 }
-import { watch } from 'vue'
 
+// Watch the asideMenuVisible prop for changes
 watch(() => props.asideMenuVisible, (newValue) => {
   console.log('AsideMenu visibility changed:', newValue)
 })
 
+// Reactive credits ref for user
+const credits = ref(null)
+
+// Fetch user data and update menu configurations dynamically
 const updateMenuConfig = async () => {
-  await userStore.fetchUser()
+  await userStore.fetchUser()  // Fetch user data
   const status = userStore.user?.status || 'default'
-  const credits = userStore.user?.credits || 0
-  const newMenuItems = generateMenuAside(status)
+  credits.value = userStore.user?.credits || 0  // Update reactive credits ref
+
+  // Generate new menu configurations based on user status and credits
   menuNavBar.value = generateMenuConfig(status, credits)
+  menuAside.value = generateMenuAside(status)
 
-  menuAside.value = newMenuItems
-
+  // Ensure UI updates after menu changes
   await nextTick()
 }
 
+// When the component mounts, fetch user data and update menu config
 onMounted(() => {
   updateMenuConfig()
 })

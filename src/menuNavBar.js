@@ -5,9 +5,15 @@ import {
   mdiLogout,
   mdiThemeLightDark,
 } from '@mdi/js';
+import { computed } from 'vue';
 
 // Function to generate the menu configuration based on user status
 export const generateMenuConfig = (status, credits) => {
+  // Dynamic computed property to reactively return credits
+  const compCredits = computed(() => {
+    return credits.value !== undefined ? `Credits: ${credits.value}` : 'Loading...';
+  });
+
   const commonMenuItems = [
     {
       icon: mdiThemeLightDark,
@@ -25,7 +31,7 @@ export const generateMenuConfig = (status, credits) => {
 
   const companyMenuItems = [
     {
-      label: `Credits: ${credits || 'Loading...'}`, // Use dynamic credits
+      label: compCredits.value, // Display reactive credits directly
     },
     {
       isCurrentUser: true,
@@ -58,7 +64,7 @@ export const generateMenuConfig = (status, credits) => {
 
   const uxReviewerMenuItems = [
     {
-      label: `Credits: ${credits !== undefined && credits !== null ? credits : 'Loading...'}`, // Use dynamic credits or 'Loading...'
+      label: compCredits.value, // Display reactive credits directly
     },
     {
       isCurrentUser: true,

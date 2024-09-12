@@ -58,6 +58,34 @@ const completeJob = async (jobId, userId) => {
   }
 };
 
+async function transferCredits(fromAccountId, toAccountId, amount) {
+  try {
+    // const token = localStorage.getItem('token'); // Assuming JWT is stored in localStorage
+    const response = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/transactions/transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${token}` // Add JWT to the Authorization header
+      },
+      body: JSON.stringify({
+        fromAccountId: fromAccountId,
+        toAccountId: toAccountId,
+        amount: amount
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log('Transfer successful:', data.message);
+    } else {
+      console.error('Transfer failed:', data.error);
+    }
+  } catch (error) {
+    console.error('An error occurred during the transfer:', error);
+  }
+}
+
 const submitFeedback = async () => {
   try {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/questionnaire/add`, {
@@ -75,8 +103,9 @@ const submitFeedback = async () => {
       const result = await response.json();
       console.log('Feedback submitted successfully:', result);
       completeJob(jobStore.selectedJob?._id, userStore.user?._id);
+      transferCredits(jobStore.selectedJob?.companyUid, userStore.user?._id, jobStore.selectedJob?.credits)
       mainStore.inExcercise = ref(false)
-      router.push('/dashboard')
+      // router.push('/dashboard')
       // Handle success (e.g., show a confirmation message)
     } else {
       console.error('Error submitting feedback:', response.statusText);
@@ -109,14 +138,14 @@ const toggleIframe = () => {
     main
   >
     <!-- Toggle Button -->
-    <BaseButton
+    <!-- <BaseButton
       @click="toggleIframe"
       :icon="mdiWeb"
       label="Show iFrame"
       color="primary"
       rounded-full
       small
-    />
+    /> -->
 
     <!-- Conditional iFrame Display -->
     <div v-if="showIframe" class="mt-4">

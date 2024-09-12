@@ -194,12 +194,22 @@ const startReview = () => {
   mainStore.inExcercise = ref(true)
   showIframe.value = true; // Show the iframe when the button is clicked
   startTimer(); // Start the timer when the button is clicked
+  window.open("https://temp-mail.org/en/")
+  window.open(jobStore.selectedJob?.websiteUrl)
+
 }
 
 const handleNext = () => {
   // Handle the action for the "Next" button
   router.push('/forms')
   console.log('Next button clicked');
+}
+
+
+const componentKey = ref(0)
+
+const reloadComponent = () => {
+  componentKey.value++
 }
 </script>
 
@@ -214,14 +224,14 @@ const handleNext = () => {
         <SectionTitleLineWithButton :icon="mdiChartTimelineVariant" title="Overview" main />
 
         <SectionTitleLineWithButton :icon="mdiChartPie" title="Trends overview">
-          <BaseButton :icon="mdiReload" color="whiteDark" @click="fillChartData" />
+          <BaseButton :icon="mdiReload" color="whiteDark" @click="reloadComponent" />
         </SectionTitleLineWithButton>
 
         <CardBox class="mb-6">
-          <div v-if="chartData">
+          <!-- <div v-if="chartData">
             <LineChart :data="chartData" class="h-96" />
-          </div>
-          <div>
+          </div> -->
+          <div :key="componentKey">
             <BarChart v-if="isBarChartVisible" :barChartData="barChartData" class="h-96" />
           </div>
         </CardBox>
@@ -269,17 +279,6 @@ const handleNext = () => {
               {{ Math.floor(timer / 60) }}:{{ (timer % 60).toString().padStart(2, '0') }}
             </span>
           </div>
-        </div>
-
-        <!-- Conditionally load iframe -->
-        <div v-if="showIframe" class="mt-4">
-          <iframe
-            :src="jobStore.selectedJob?.websiteUrl"
-            width="100%"
-            height="600"
-            frameborder="0"
-            allowfullscreen
-          ></iframe>
         </div>
 
         <!-- Conditionally show next button -->

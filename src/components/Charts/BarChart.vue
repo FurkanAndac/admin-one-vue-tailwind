@@ -22,7 +22,7 @@ onMounted(() => {
       type: 'bar',
       data: props.barChartData,
       options: {
-        title: {display:true, text: " "},
+        // title: {display:true, text: " "},
         responsive: true,
         maintainAspectRatio: false,
         scales: {

@@ -56,11 +56,11 @@ const currentPageHuman = computed(() => currentPage.value + 1)
 
 // Generate list of pages for pagination
 const pagesList = computed(() => {
-  const pagesList = []
+  const pages = []
   for (let i = 0; i < numPages.value; i++) {
-    pagesList.push(i)
+    pages.push(i)
   }
-  return pagesList
+  return pages
 })
 
 // Remove an item from an array
@@ -106,6 +106,16 @@ const updateChart = () => {
 
 const isChecked = (jobId) => selectedJobs.value.has(jobId)
 
+// Automatically select the first job
+const selectFirstJob = () => {
+  if (items.value.length > 0) {
+    const firstJobId = items.value[0]._id
+    selectedJobs.value.add(firstJobId)
+    emit('update-selected-jobs', Array.from(selectedJobs.value))
+    console.log(`Automatically selected job: ${firstJobId}`)
+  }
+}
+
 // Fetch jobs when the component is mounted
 onMounted(async () => {
   const userId = userStore.user?._id
@@ -114,6 +124,8 @@ onMounted(async () => {
   console.log('Fetched Jobs:', jobStore.jobs)
   // Store the fetched jobs in the array
   items.value = jobStore.jobs
+  // Automatically check the first job
+  selectFirstJob()
 })
 </script>
 
@@ -136,7 +148,7 @@ onMounted(async () => {
       <tr>
         <th v-if="checkable" />
         <th />
-        <th></th>
+
         <th>Website</th>
         <th>Credits</th>
         <th>Test Account</th>
@@ -145,7 +157,7 @@ onMounted(async () => {
       </tr>
     </thead>
     <tbody>
-  <tr v-for="job in jobs" :key="job._id">
+  <tr v-for="job in itemsPaginated" :key="job._id">
     <!-- Add a checkbox in front of every row -->
     <td>
       <input
@@ -156,9 +168,7 @@ onMounted(async () => {
       />
     </td>
     <!-- Rest of your table rows -->
-    <td class="border-b-0 lg:w-6 before:hidden">
-      <UserAvatar :username="job._id" class="w-24 h-24 mx-auto lg:w-6 lg:h-6" />
-    </td>
+
     <td data-label="Website">{{ job.websiteUrl }}</td>
     <td data-label="Credits">{{ job.credits }}</td>
     <td data-label="Test Account">{{ job.testAccount }}</td>
@@ -172,13 +182,13 @@ onMounted(async () => {
     </td>
     <td class="before:hidden lg:w-1 whitespace-nowrap">
       <BaseButtons type="justify-start lg:justify-end" no-wrap>
-        <BaseButton color="info" :icon="mdiEye" small @click="isModalActive = true" />
+        <!-- <BaseButton color="info" :icon="mdiEye" small @click="isModalActive = true" />
         <BaseButton
           color="danger"
           :icon="mdiTrashCan"
           small
           @click="isModalDangerActive = true"
-        />
+        /> -->
       </BaseButtons>
     </td>
   </tr>
