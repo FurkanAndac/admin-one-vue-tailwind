@@ -46,6 +46,7 @@ import FooterBar from '@/components/FooterBar.vue'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebaseConfig'
 import { useMainStore } from '@/stores/main'
+import { mdiForwardburger, mdiBackburger, mdiMenu } from '@mdi/js'
 
 // Define props
 const props = defineProps({
@@ -103,15 +104,14 @@ const credits = ref(null)
 
 // Fetch user data and update menu configurations dynamically
 const updateMenuConfig = async () => {
-  await userStore.fetchUser()  // Fetch user data
+  await userStore.fetchUser()
   const status = userStore.user?.status || 'default'
-  credits.value = userStore.user?.credits || 0  // Update reactive credits ref
+  credits.value = userStore.user?.credits || 0
 
-  // Generate new menu configurations based on user status and credits
-  menuNavBar.value = generateMenuConfig(status, credits)
-  menuAside.value = generateMenuAside(status)
-
-  // Ensure UI updates after menu changes
+  menuNavBar.value = await generateMenuConfig(status, credits)
+  console.log("Generated Menu for NavBar:", JSON.stringify(menuNavBar.value))
+  menuAside.value = await generateMenuAside(status)
+  console.log("Generated Menu for Aside:", JSON.stringify(menuAside.value))
   await nextTick()
 }
 

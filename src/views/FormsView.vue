@@ -95,6 +95,7 @@ const submitFeedback = async () => {
       },
       body: JSON.stringify({
         jobId: jobStore.selectedJob._id,
+        userId: userStore.user._id,
         ...form.value,
       }),
     });
@@ -105,7 +106,7 @@ const submitFeedback = async () => {
       completeJob(jobStore.selectedJob?._id, userStore.user?._id);
       transferCredits(jobStore.selectedJob?.companyUid, userStore.user?._id, jobStore.selectedJob?.credits)
       mainStore.inExcercise = ref(false)
-      // router.push('/dashboard')
+      router.push('/dashboard')
       // Handle success (e.g., show a confirmation message)
     } else {
       console.error('Error submitting feedback:', response.statusText);

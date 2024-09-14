@@ -26,6 +26,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useJobStore } from '@/stores/jobStore'
 import { useRouter } from 'vue-router'
 import BarChart from '@/components/Charts/BarChart.vue'
+import Popup from '@/components/Popup.vue'; // Import your Popup component
 
 const chartData = ref(null)
 const userStore = useUserStore();
@@ -36,6 +37,8 @@ const timerRunning = ref(false); // Ref to control timer state
 const nextButtonVisible = ref(false); // Ref to control next button visibility
 const router = useRouter()
 const selectedJobs = ref([])
+const showPopup = ref(false);
+const reviewButtonVisible = ref(false);
 
 const updateSelectedJobs = (jobIds) => {
   selectedJobs.value = jobIds
@@ -60,7 +63,7 @@ const updateBarChartData = () => {
   // Populate chart data
   filteredJobs.forEach(job => {
     chartData.datasets.push({
-      label: "test", // Label for each job
+      // label: "test", // Label for each job
       data: generateDataForJob(job, completionCounts), // Data for each job
       backgroundColor: generateRandomColor(), // Random color for each dataset
       borderColor: generateRandomColorBorder(), // Random border color for each dataset
@@ -161,9 +164,17 @@ onMounted(async () => {
   fillChartData();
   updateBarChartData()
   await userStore.fetchUser();
+  console.log(userStore.user?.status)
   if (userStore.user?.status === "UXReviewer") {
+    console.log("test1")
     await jobStore.fetchJobByAlgorithm(userStore.user);
+    console.log('Initial errorMessage:', jobStore.errorMessage);
+    // const payable = jobStore.checkPayableJob();
+    // if (payable) {
+    //   reviewButtonVisible.value = true
+    // }
   }
+
   console.log('User status after fetch:', userStore.userStatus); // Log the user status
   console.log('fetched job according to algorithm:', jobStore.selectedJob)
 });
@@ -190,6 +201,17 @@ watch(isUser, (newValue) => {
   console.log('isUser changed:', newValue); // Log change in isUser
 });
 
+// Watch for changes in jobStore.errorMessage to trigger the popup
+watch(() => jobStore.errorMessage, (newErrorMessage) => {
+  if (newErrorMessage) {
+    showPopup.value = true;
+    console.log("showpopupvalue: "+ showPopup.value)
+  } else {
+    showPopup.value = false;
+    console.log("showpopupvalue: "+ showPopup.value)
+  }
+});
+
 const startReview = () => {
   mainStore.inExcercise = ref(true)
   showIframe.value = true; // Show the iframe when the button is clicked
@@ -205,16 +227,12 @@ const handleNext = () => {
   console.log('Next button clicked');
 }
 
-
 const componentKey = ref(0)
 
 const reloadComponent = () => {
   componentKey.value++
 }
 </script>
-
-
-
 
 <template>
   <LayoutAuthenticated>
@@ -265,6 +283,13 @@ const reloadComponent = () => {
               <li>Test credentials: {{ jobStore.selectedJob?.testAccount }}</li>
             </ul>
           </div>
+          <Popup :isVisible="showPopup" @close="showPopup = false">
+            <h2 class="text-lg font-semibold">Popup Title</h2>
+            <p class="mt-2">{{ jobStore.errorMessage + " Refresh the page for a new job!" }}</p>
+            <button @click="showPopup = false" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Close
+            </button>
+          </Popup>
 
           <!-- Start Review button with timer -->
           <div class="flex flex-col items-center">

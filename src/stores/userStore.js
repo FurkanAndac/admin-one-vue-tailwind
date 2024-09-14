@@ -34,8 +34,8 @@ export const useUserStore = defineStore('user', () => {
               reject(new Error('Failed to fetch user from backend'));
             }
           } catch (error) {
-            console.error('Error fetching user from backen:', error);
-            reject(error); // Reject the promise on error
+            console.error('Detailed error:', error.response ? error.response.data : error.message);
+            reject(error);
           }
         } else {
           // User is signed out

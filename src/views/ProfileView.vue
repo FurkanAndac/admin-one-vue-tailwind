@@ -32,10 +32,10 @@ const passwordForm = reactive({
 
 // Fetch user information and populate the form fields
 onMounted(() => {
-  userStore.fetchUser().then(() => {
-    profileForm.name = userStore.user?.displayName || ''
-    profileForm.email = userStore.user?.email || ''
-  })
+  // userStore.fetchUser().then(() => {
+  //   profileForm.name = userStore.user?.displayName || ''
+  //   profileForm.email = userStore.user?.email || ''
+  // })
 })
 
 // Submit handler for updating profile information
