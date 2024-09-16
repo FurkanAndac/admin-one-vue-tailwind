@@ -47,58 +47,82 @@ export const useJobStore = defineStore('job', () => {
   /**
    * Fetch a job according to a specific algorithm
    */
-  const fetchJobByAlgorithm = async (user) => {
-    try {      console.log("test")
+const fetchJobByAlgorithm = async (user) => {
+  try {
+    // API request to fetch a job
+    const response = await axios.get(`${backendUrl}/api/jobs/pick`, {
+      params: { user } // Pass user as query parameter
+    });
 
-      // Include the user ID in the headers
-      const response = await axios.get(`${backendUrl}/api/jobs/pick`, {
-        params: {
-          user: user // Send user ID as a query parameter
-        }
-      });
-      console.log("test")
-      if (response.status === 200) {
-        const job = response.data;
-        if (job.message) {
-          console.warn(job.message); // Log or display a message to the user
-          selectedJob.value = null; // Set selectedJob to null if no job is available
-        } else {
-          selectedJob.value = job; // Update selectedJob with the fetched job
-          console.log('Fetched job using algorithm:', selectedJob.value);
-        }
-        errorMessage.value = null; // Clear error message on successful fetch
+    if (response.status === 200) {
+      const job = response.data;
+
+      // Check if any of the specific messages are returned
+      if (job.message && (job.message === 'No more jobs available' ||
+                          job.message === 'No more jobs available for this user' ||
+                          job.message === 'No jobs available' ||
+                          job.message === 'No more payable jobs available')) {
+        console.warn(job.message); // Log the message (optional)
+        selectedJob.value = null; // Set selectedJob to null
+        errorMessage.value = job.message; // Display the message to the user
+        clearErrorMessageAfterDelay(); // Clear the message after a delay
       } else {
-        // Handle unexpected response status codes
-        console.error('Unexpected response status:', response.status);
-        error.value = 'Unexpected response status.';
-        errorMessage.value = 'An unexpected error occurred.';
-        setTimeout(() => {
-          errorMessage.value = null;
-        }, 8000);
+        // If a valid job is returned
+        selectedJob.value = job; // Update selectedJob with the fetched job
+        console.log('Fetched job using algorithm:', selectedJob.value);
+        errorMessage.value = null; // Clear any previous error message
       }
-    } catch (err) {
-      if (err.response) {
-        // Handle errors returned from the server
-        if (err.response.status === 409) {
-          console.warn('Conflict: Company has too little credits or some other issue.');
-          error.value = 'Conflict: Company has too little credits.';
-          errorMessage.value = 'Company has insufficient credits.';
-        } else {
-          console.error('Error fetching job by algorithm:', err.response.status);
-          error.value = 'Failed to fetch job by algorithm';
-          errorMessage.value = 'Failed to fetch job by algorithm.';
-        }
-      } else {
-        // Handle errors not related to response (e.g., network errors)
-        console.error('Error fetching job by algorithm:', err.message);
-        error.value = err.message;
-        errorMessage.value = 'An error occurred while fetching job by algorithm.';
-      }
-      setTimeout(() => {
-        errorMessage.value = null;
-      }, 8000);
+    } else {
+      // Handle unexpected status codes
+      handleErrorResponse(response.status);
     }
-  };
+  } catch (err) {
+    // Differentiate between server and network errors
+    if (err.response) {
+      handleServerError(err.response.status);
+    } else {
+      handleNetworkError(err.message);
+    }
+  }
+};
+
+// Helper function to handle unexpected status codes
+const handleErrorResponse = (status) => {
+  console.error('Unexpected response status:', status);
+  error.value = `Unexpected response status: ${status}`;
+  errorMessage.value = 'An unexpected error occurred.';
+  clearErrorMessageAfterDelay();
+};
+
+// Helper function to handle server-side errors
+const handleServerError = (status) => {
+  if (status === 409) {
+    console.warn('Conflict: Company has too little credits.');
+    error.value = 'Conflict: Company has insufficient credits.';
+    errorMessage.value = 'Company has insufficient credits.';
+  } else {
+    console.error(`Server error: ${status}`);
+    error.value = `Server error: ${status}`;
+    errorMessage.value = 'Failed to fetch job by algorithm.';
+  }
+  clearErrorMessageAfterDelay();
+};
+
+// Helper function to handle network or other non-response errors
+const handleNetworkError = (message) => {
+  console.error('Network or other error:', message);
+  error.value = message;
+  errorMessage.value = 'A network error occurred while fetching the job.';
+  clearErrorMessageAfterDelay();
+};
+
+// Helper function to clear error message after a delay
+const clearErrorMessageAfterDelay = () => {
+  setTimeout(() => {
+    errorMessage.value = null;
+  }, 8000); // Clear error after 8 seconds
+};
+
 
 
   return {

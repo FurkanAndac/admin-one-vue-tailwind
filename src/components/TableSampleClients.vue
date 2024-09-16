@@ -10,6 +10,7 @@ import BaseButton from '@/components/BaseButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { useJobStore } from '@/stores/jobStore'
 import { useUserStore } from '@/stores/userStore'
+import axios from 'axios'
 
 // Define props
 defineProps({
@@ -116,6 +117,66 @@ const selectFirstJob = () => {
   }
 }
 
+const downloadReport = async (reportId) => {
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/reports/download/${reportId}`, {
+      responseType: 'blob', // Important to handle binary data
+    });
+
+    if (response.status === 200) {
+      // Create a Blob from the response
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+
+      // Create a download link
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', `report_${reportId}.pdf`);
+
+      // Append the link to the document body
+      document.body.appendChild(link);
+
+      // Programmatically click the link to trigger the download
+      link.click();
+
+      // Clean up by removing the link and revoking the object URL
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+
+      console.log("Report downloaded successfully");
+    } else {
+      console.error("Failed to download report:", response.status);
+    }
+  } catch (error) {
+    console.error("Error downloading report:", error);
+  }
+};
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL + '/api/reports/generate'
+const generateReport = async (userId, jobId) => {
+  try {
+    const response = await axios.post(backendUrl, {
+      userId: userId,
+      jobId: jobId, // Pass the jobId in the request body
+    });
+
+    if (response.status === 200) {
+      console.log("Report generated successfully:", response.data);
+      // You can handle file download logic here if needed
+    }
+    if (response.status === 201) {
+      console.log("Report generated successfully:", response.data);
+      // You can handle file download logic here if needed
+      // reportId.value = response.data.reportId
+      downloadReport(response.data.reportId)
+
+    } else {
+      console.error("Failed to generate report:", response.status);
+    }
+  } catch (error) {
+    console.error("Error generating report:", error);
+  }
+};
+
 // Fetch jobs when the component is mounted
 onMounted(async () => {
   const userId = userStore.user?._id
@@ -182,13 +243,15 @@ onMounted(async () => {
     </td>
     <td class="before:hidden lg:w-1 whitespace-nowrap">
       <BaseButtons type="justify-start lg:justify-end" no-wrap>
-        <!-- <BaseButton color="info" :icon="mdiEye" small @click="isModalActive = true" />
+        <BaseButton color="info" :icon="mdiEye" small @click="isModalActive = true" />
+        <BaseButton color="info" :icon="mdiEye" small @click="generateReport(userStore.user?._id, job._id)" />
+
         <BaseButton
           color="danger"
           :icon="mdiTrashCan"
           small
           @click="isModalDangerActive = true"
-        /> -->
+        />
       </BaseButtons>
     </td>
   </tr>

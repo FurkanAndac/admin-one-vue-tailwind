@@ -166,7 +166,6 @@ onMounted(async () => {
   await userStore.fetchUser();
   console.log(userStore.user?.status)
   if (userStore.user?.status === "UXReviewer") {
-    console.log("test1")
     await jobStore.fetchJobByAlgorithm(userStore.user);
     console.log('Initial errorMessage:', jobStore.errorMessage);
     // const payable = jobStore.checkPayableJob();
@@ -285,7 +284,7 @@ const reloadComponent = () => {
           </div>
           <Popup :isVisible="showPopup" @close="showPopup = false">
             <h2 class="text-lg font-semibold">Popup Title</h2>
-            <p class="mt-2">{{ jobStore.errorMessage + " Refresh the page for a new job!" }}</p>
+            <p class="mt-2">{{ jobStore.errorMessage }}</p>
             <button @click="showPopup = false" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Close
             </button>
